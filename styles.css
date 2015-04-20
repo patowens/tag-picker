@@ -1,0 +1,80 @@
+body { 
+	padding:20px;
+	width:300px;
+}
+
+.input {
+	display:block;
+	width:100%;
+	line-height:1rem;
+	padding:8px 8px;
+	overflow:hidden;
+	font-size:13px;
+}
+
+.tags {
+	overflow:hidden;
+	margin:8px 0px;
+}
+
+.tags .tag {
+	padding:4px 10px 4px 9px;
+	font-size:13px;
+	line-height:17px;
+	display:inline-block;
+	background:#DDDDDD;
+	margin-bottom:5px;
+	margin-right:5px;
+
+	-webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.tags .tag .remove { 
+    font-weight: bold;
+    font-size:12px; 
+    color: #AAAAAA;
+    position:relative;
+    left:4px;
+    padding-left:4px;
+    padding:2px;
+}
+
+.tags .tag .remove:hover {
+	color:#777777;
+	cursor: pointer;
+
+}
+
+.suggestions {
+	background:#EEEEEE;
+	padding:8px 5px;
+}
+
+.suggestions:empty {
+	padding:0px;
+}
+
+.suggestions .suggestion {
+	padding:4px 6px;
+	font-size:13px;
+	line-height:17px;
+	display:inline-block;
+
+	-webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+}
+
+.suggestions .suggestion:hover {
+	background:#CCCCCC;
+	cursor: pointer;
+}
