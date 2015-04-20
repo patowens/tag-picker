@@ -41,7 +41,7 @@ body {
     position:relative;
     left:4px;
     padding-left:4px;
-    padding:2px;
+    padding:4px;
 }
 
 .tags .tag .remove:hover {
@@ -74,7 +74,7 @@ body {
 
 }
 
-.suggestions .suggestion:hover {
+.suggestions .suggestion:hover, .suggestions .suggestion.focus {
 	background:#CCCCCC;
 	cursor: pointer;
 }

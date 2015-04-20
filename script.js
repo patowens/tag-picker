@@ -26,7 +26,8 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	},
 
 	events: {
-		'keyup' : 'keyup',
+		'keyup .input' : 'keyupOnInput',
+		'keydown .input' : 'keydownOnInput',
 		'click .remove' : 'removeTag',
 		'click .suggestion' : 'addSuggestion'
 	},
@@ -35,6 +36,9 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		this.options = options;
 		this.dictionary = ['javascript', 'nodejs', 'css', 'html', 'php'];
 		this.dictionaryLong = ['jabot', 'jacal', 'jacks', 'jacky', 'jaded', 'jades', 'jager', 'jaggs', 'jaggy', 'jagra', 'jails', 'jakes', 'jalap', 'jalop', 'jambe', 'jambs', 'jammy', 'janes', 'janty', 'japan', 'japed', 'japer', 'japes', 'jarls', 'jatos', 'jauks', 'jaunt'];
+		this.currentTags = new Array();
+		this.currentSuggestions = new Array();
+		this.currentSuggestion = '';
 	},
 
 	search: function(input) {
@@ -54,13 +58,54 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		this.ui.input.focus();
 	},
 
-	keyup: function(e) {
+	keyupOnInput: function(e) {
 		if (e.keyCode == 13) {
+			// enter key (add tag)
 			var currentValue = this.ui.input.val();
-			this.addTag(currentValue);
+
+			// has user hit enter on a suggestion?
+			if (this.currentSuggestion.length != 0) {
+				
+				// add tag
+				this.addTag(this.currentSuggestion);				
+
+				// clear input
+				this.ui.input.val('');
+				this.currentSuggestion = '';
+
+				// update suggestions (clear)
+				var searchMatches = this.search(this.ui.input.val());
+				this.updateMatches(searchMatches);
+			} else if (currentValue.length != 0) {
+				this.addTag(currentValue);
+			}
+
+		} else if (e.keyCode == 9) {
+			e.preventDefault();
 		} else {
+			// update suggestions
 			var searchMatches = this.search(this.ui.input.val());
 			this.updateMatches(searchMatches);
+		}
+	},
+
+	keydownOnInput: function(e) {
+		if (e.keyCode == 9) {
+			// tab key (cycle through suggestions)
+			e.preventDefault();
+
+			if (this.ui.input.val().length != 0 && this.currentSuggestions.length > 0) {
+				// there are suggestions.  cycle through them.
+				if (this.ui.suggestions.children('.focus').length == 0) {
+					this.ui.suggestions.children(':first-child').addClass('focus');
+					this.currentSuggestion = this.ui.suggestions.children(':first-child').text();
+				} else {
+					var currentFocus = this.ui.suggestions.find('.focus');
+					this.ui.suggestions.children('.focus').removeClass('focus');
+					currentFocus.next().addClass('focus');
+					this.currentSuggestion = currentFocus.next().text();
+				}
+			}
 		}
 	},
 
@@ -90,11 +135,13 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 			if (_.contains(this.getTags(), value.toLowerCase())) {
 			} else {
 					this.ui.tags.append('<span class="tag">' + value + '</span>');
+					this.currentTags.push(value);
 					this.ui.input.val('');
 					this.mode();
 			}
 		} else {
 			this.ui.tags.append('<span class="tag">' + value + '</span>');
+			this.currentTags.push(value);
 			this.ui.input.val('');
 			this.mode();
 		}
@@ -103,6 +150,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	},
 
 	removeTag: function(e) {
+		_.pluck(this.currentTags, $(e.currentTarget).parent().text());
 		$(e.currentTarget).parent().remove();
 	},
 
@@ -122,6 +170,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 		var currentResults = this.getTags();
 		var difference = _.difference(matches, currentResults);
+		this.currentSuggestions = difference;
 
 		if (this.ui.input.val().length != 0) {
 			$.each(difference, function(index, value) {
@@ -132,4 +181,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 });
 
-app.regionMain.show(new Tagity({ preventDuplicates: true, characterLimit: 30 }));
+app.regionMain.show(new Tagity({ 
+	preventDuplicates: true, 
+	characterLimit: 30
+}));
