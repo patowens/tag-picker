@@ -115,7 +115,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 			if (this.options.createTagAsYouType) {
 
 				if (this.ui.input.val()) {
-					this.ui.tags.find('.example').text(this.ui.input.val());
+					this.ui.tags.find('.example').text(' ' + this.ui.input.val() + '..');
 				} else {
 					if (this.currentTags.length == 0) {
 						if (this.options.exampleTag)
@@ -172,7 +172,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 			$.each(that.$el.find('.tag'), function(index, value) {
 				if ($(this).find('.remove').length) {
 				} else {
-					$(this).append('<span class="remove">x</span>');
+					$(this).append('<span class="remove"></span>');
 				}
 			});
 		}
@@ -201,8 +201,6 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		if (this.options.preventDuplicates) {
 			var duplicatePosition = this.getTags().indexOf(value.toLowerCase());
 			if (duplicatePosition != -1) {
-				console.log(duplicatePosition);
-				console.log(this.$el.find('.tag:nth-child(1)'));
 				this.$el.find('.tag:nth-child(' + (duplicatePosition + 1) + ')').addClass('tagErrorPulse');
 				window.setTimeout(function() {
 					this.$el.find('.tag:nth-child(' + (duplicatePosition + 1) + ')').removeClass('tagErrorPulse');
@@ -237,11 +235,14 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 	getTags: function() {
 		var tags = [];
-		$.each(this.$el.find('.tag'), function(index, value) {
-			var tag = $(this).text().toLowerCase();
-			tags.push(tag.substring(0, tag.length -1));
-		});
-		return tags;
+		if (this.$el.find('.tag').length) { 
+			$.each(this.$el.find('.tag'), function(index, value) {
+				var tag = $(this).text().toLowerCase();
+				tags.push(tag.substring(0, tag.length));
+			});
+			return tags;
+		}
+		return false;	
 	},
 
 	updateMatches: function(matches) {
@@ -280,6 +281,6 @@ app.regionMain.show(new Tagity({
 	preventDuplicates: true, 
 	characterLimit: 20,
 	createTagAsYouType: true,
-	exampleTag: 'Microsoft Access',
+	exampleTag: 'Spreadsheets',
 	maxSuggestions: 5
 }));

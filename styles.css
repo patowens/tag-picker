@@ -52,14 +52,14 @@ body {
 
 .tags .tag .remove { 
   font-weight: bold;
-  font-size: 9px;
+  font-size: 11px;
   color: rgba(255,255,255, 0.9);
   -webkit-transition: all .35s;
   transitions: all .35s;
-  width: 12px;
-  height: 12px;
-  line-height: 12px;
-  background: rgba(0,0,0,0.10);
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  /*background: rgba(0,0,0,0.20);*/
   border-radius: 99px;
   text-align: center;
   display: inline-block;
@@ -67,12 +67,26 @@ body {
   margin-top: -1px;
   position:relative;
   left:4px;
+}
 
+.tags .tag .remove:after {
+	content: "\f00d";
+	display: inline;
+  height: auto;
+  width: auto;
+  display: inline-block;
+  font: normal normal normal 14px/1 FontAwesome;
+  font-size: inherit;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transform: translate(0, 0);
+  padding-top:1px;
 }
 
 .tags .tag .remove:hover {
 	color:rgba(255,255,255, 1);
-	background:rgba(0,0,0,0.2);
+	background:rgba(0,0,0,0.4);
 	cursor: pointer;
 
 }
@@ -133,27 +147,31 @@ body {
 }
 
 @keyframes "tagErrorPulse" {
- 0% {background:#CCCCCC; }
- 20% {background:#4daf62;}
- 100% {background:#CCCCCC; }
+ 0% {background:#7981c3; }
+ 10% {background:#4daf62;}
+ 30% {background:#4daf62;}
+ 100% {background:#7981c3; }
 }
 
 @-moz-keyframes tagErrorPulse {
- 0% {background:#CCCCCC; }
- 20% {background:#4daf62;}
- 100% {background:#CCCCCC; }
+ 0% {background:#7981c3; }
+ 10% {background:#4daf62;}
+ 30% {background:#4daf62;}
+ 100% {background:#7981c3; }
 }
 
 @-webkit-keyframes "tagErrorPulse" {
- 0% {background:#CCCCCC; }
- 20% {background:#4daf62;}
- 100% {background:#CCCCCC; }
+ 0% {background:#7981c3; }
+ 10% {background:#4daf62;}
+ 30% {background:#4daf62;}
+ 100% {background:#7981c3; }
 }
 
 @-ms-keyframes "tagErrorPulse" {
- 0% {color: black; background:#CCCCCC; }
- 20% {color: white; background:#4daf62;}
- 100% {color: black; background:#CCCCCC; }
+ 0% {background:#7981c3; }
+ 10% {background:#4daf62;}
+ 30% {background:#4daf62;}
+ 100% {background:#7981c3; }
 }
 
 .errorPulse {
