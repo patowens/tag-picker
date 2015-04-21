@@ -1,6 +1,7 @@
 var app = Marionette.Application.extend({
   initialize: function(options) {
     console.log('App started in container:', options.container);
+    var that = this;
   }
 });
 
@@ -38,28 +39,56 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 	initialize: function(options) {
 		this.options = options;
-		this.dictionary = ['javascript', 'nodejs', 'css', 'html', 'php'];
-		this.dictionaryLong = ['jabot', 'jacal', 'jacks', 'jacky', 'jaded', 'jades', 'jager', 'jaggs', 'jaggy', 'jagra', 'jails', 'jakes', 'jalap', 'jalop', 'jambe', 'jambs', 'jammy', 'janes', 'janty', 'japan', 'japed', 'japer', 'japes', 'jarls', 'jatos', 'jauks', 'jaunt', 'jbhifi'];
 		this.currentTags = new Array();
 		this.currentSuggestions = new Array();
 		this.currentSuggestion = '';
 		this.progressKeys = [9, 39, 40]; // tab, right arrow, down arrow
-		this.functionalKeys = [8, 13, 46, 16, 37]; // backspace, enter, delete
+		this.functionalKeys = [8, 13, 46, 16, 37, 17, 18]; // backspace, enter, delete
+		this.dictionary = this.options.data;
 	},
 
 	search: function(input) {
 		var reg = new RegExp(input.split('').join('\\w*').replace(/\W/, ""), 'i');
-	  return this.dictionaryLong.filter(function(result) {
-	    if (result.match(reg)) {
-	      return result;
-	    }
-	  });
+		if (!this.dictionary) {
+			this.ui.suggestions.addClass('loading');
+			if (this.ui.input.val().length)
+				this.ui.suggestions.addClass('has-items');
+		} else {
+			this.ui.suggestions.removeClass('loading');
+		  return this.dictionary.filter(function(result) {
+		    if (result.match(reg)) {
+		      return result;
+		    }
+		  });
+		}
 	},
 
 	onRender: function() {
 		this.mode();
 		this.ui.tags.prepend('<span class="tag example">eg: ' + this.options.exampleTag + '</span>')
 		this.ui.limit.text(this.options.characterLimit);
+		var that = this;
+
+		if (this.options.url) {
+
+			this.ui.suggestions.empty();
+
+			// Fetch data for the tag picker
+			$.ajax({
+		    type:'GET',
+		    dataType:'jsonp',
+		    fake: true,
+		    url:'http://api.etaskr.com/tags/categoryA',
+		    success:function(data, textStatus, XMLHttpRequest) {
+	    		that.ui.suggestions.empty();
+	    		that.dictionary = data;
+	    		that.ui.suggestions.removeClass('loading');
+	    		that.updateMatches(that.search(that.ui.input.val()));
+		    }
+			});
+			
+		}
+
 	},
 
 	onShow: function() {
@@ -112,26 +141,34 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 			e.preventDefault();
 		} else {
 			// update suggestions
-			var searchMatches = this.search(this.ui.input.val());
-			this.updateMatches(searchMatches.slice(0, this.options.maxSuggestions || 99));
+			
+			if (this.ui.suggestions.hasClass('loading')) {
+				return true;
+			} else {
 
-			if (this.options.createTagAsYouType) {
 
-				if (this.ui.input.val()) {
-					this.ui.tags.find('.example').text(' ' + this.ui.input.val() + '..');
-				} else {
-					if (this.currentTags.length == 0) {
-						if (this.options.exampleTag)
-							this.$el.find('.example').text('eg: ' + this.options.exampleTag);
+				var searchMatches = this.search(this.ui.input.val());
+				if (searchMatches)
+					this.updateMatches(searchMatches.slice(0, this.options.maxSuggestions || 99));
+
+				if (this.options.createTagAsYouType) {
+					if (this.ui.input.val().length) {
+						this.ui.tags.find('.example').text(' ' + this.ui.input.val() + '..');
 					} else {
-						this.ui.tags.find('.example').text(this.ui.input.val());
+						if (this.currentTags.length == 0) {
+							if (this.options.exampleTag)
+								this.$el.find('.example').text('eg: ' + this.options.exampleTag);
+						} else {
+							this.ui.tags.find('.example').text(this.ui.input.val());
+						}
 					}
 				}
-			}
 
-			if (this.ui.input.val()) {
-				this.ui.extras.addClass('reveal');
-				this.ui.input.addClass('showing-extras');
+				if (this.ui.input.val()) {
+					this.ui.extras.addClass('reveal');
+					this.ui.input.addClass('showing-extras');
+				}
+
 			}
 
 		}
@@ -187,6 +224,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		this.addTag($(e.currentTarget).text());
 		this.ui.input.val('');
 		this.ui.suggestions.empty();
+		this.ui.suggestions.removeClass('has-items');
 
 		// if there was an example tag, hide it.
 		if (this.options.exampleTag)
@@ -229,6 +267,10 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		this.ui.extras.removeClass('reveal');
 		this.ui.input.removeClass('showing-extras');
 
+		// if there were suggestions, clear them.
+		this.ui.suggestions.empty();
+		this.ui.suggestions.removeClass('has-items');
+
 		// if there was an example tag, hide it.
 		if (this.options.exampleTag)
 		this.$el.find('.example').empty();
@@ -256,14 +298,17 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 		var that = this;
 		this.ui.suggestions.empty();
+		this.ui.suggestions.removeClass('has-items');
 
 		var currentResults = this.getTags();
+		matches = _.map(matches, function(data) { return data.toLowerCase() });
 		var difference = _.difference(matches, currentResults);
 		this.currentSuggestions = difference;
 
 		if (this.ui.input.val().length != 0) {
 			$.each(difference, function(index, value) {
 				that.ui.suggestions.append('<span class="suggestion">' + value + '</span>');
+				that.ui.suggestions.addClass('has-items');
 			});
 		}
 	},
@@ -289,5 +334,6 @@ app.regionMain.show(new Tagity({
 	characterLimit: 100,
 	createTagAsYouType: true,
 	exampleTag: 'Spreadsheets',
-	maxSuggestions: 5
+	maxSuggestions: 5,
+	url: 'http://api.etaskr.com/tags/categoryA'
 }));
