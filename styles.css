@@ -3,6 +3,11 @@ body {
 	width:300px;
 }
 
+.feature-tagity {
+	position:relative;
+	overflow:hidden;
+}
+
 .input {
 	display:block;
 	width:100%;
@@ -22,9 +27,10 @@ body {
 	font-size:13px;
 	line-height:17px;
 	display:inline-block;
-	background:#DDDDDD;
+	background:#7981c3;
 	margin-bottom:5px;
 	margin-right:5px;
+	color:white;
 
 	-webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -35,6 +41,7 @@ body {
 }
 
 .tags .tag.example {
+	background:#CCCCCC;
 	color:#888888;
 }
 
@@ -44,17 +51,28 @@ body {
 }
 
 .tags .tag .remove { 
-    font-weight: bold;
-    font-size:12px; 
-    color: #AAAAAA;
-    position:relative;
-    left:4px;
-    padding-left:4px;
-    padding:4px;
+  font-weight: bold;
+  font-size: 9px;
+  color: rgba(255,255,255, 0.9);
+  -webkit-transition: all .35s;
+  transitions: all .35s;
+  width: 12px;
+  height: 12px;
+  line-height: 12px;
+  background: rgba(0,0,0,0.10);
+  border-radius: 99px;
+  text-align: center;
+  display: inline-block;
+  vertical-align: middle;
+  margin-top: -1px;
+  position:relative;
+  left:4px;
+
 }
 
 .tags .tag .remove:hover {
-	color:#777777;
+	color:rgba(255,255,255, 1);
+	background:rgba(0,0,0,0.2);
 	cursor: pointer;
 
 }
@@ -85,5 +103,102 @@ body {
 
 .suggestions .suggestion:hover, .suggestions .suggestion.focus {
 	background:#CCCCCC;
+	cursor: pointer;
+}
+
+.extras {
+	position:absolute;
+	right:-20px;
+	top:8px;
+	-webkit-transition: right 0.3s;
+  transition: right 0.3s;
+}
+
+.reveal {
+	right: 10px;
+}
+
+.character-limit {
+	font-size:12px;
+	display:inline-block;
+	margin-right:8px;
+	color:#919292;
+}
+
+.tagErrorPulse {
+	-webkit-animation: tagErrorPulse .7s linear;
+	-moz-animation: tagErrorPulse .7s linear;
+	-ms-animation: tagErrorPulse .7s linear;
+	animation: tagErrorPulse .7s linear;
+}
+
+@keyframes "tagErrorPulse" {
+ 0% {background:#CCCCCC; }
+ 20% {background:#4daf62;}
+ 100% {background:#CCCCCC; }
+}
+
+@-moz-keyframes tagErrorPulse {
+ 0% {background:#CCCCCC; }
+ 20% {background:#4daf62;}
+ 100% {background:#CCCCCC; }
+}
+
+@-webkit-keyframes "tagErrorPulse" {
+ 0% {background:#CCCCCC; }
+ 20% {background:#4daf62;}
+ 100% {background:#CCCCCC; }
+}
+
+@-ms-keyframes "tagErrorPulse" {
+ 0% {color: black; background:#CCCCCC; }
+ 20% {color: white; background:#4daf62;}
+ 100% {color: black; background:#CCCCCC; }
+}
+
+.errorPulse {
+	-webkit-animation: errorPulse 350ms linear;
+	-moz-animation: errorPulse 350ms linear;
+	-ms-animation: errorPulse 350ms linear;
+	animation: errorPulse 350ms linear;
+}
+
+@keyframes "errorPulse" {
+ 0% {color: red; }
+ 1% {color: red; }
+ 100% {color: #919292; }
+}
+
+@-moz-keyframes errorPulse {
+ 0% {color: red; }
+ 1% {color: red; }
+ 100% {color: #919292; }
+}
+
+@-webkit-keyframes "errorPulse" {
+ 0% {color: red; }
+ 1% {color: red; }
+ 100% {color: #919292; }
+}
+
+@-ms-keyframes "errorPulse" {
+ 0% {color: red; }
+ 1% {color: red; }
+ 100% {color: #919292; }
+}
+
+.add-tag {
+	display:inline-block;
+	width:20px;
+	height:20px;
+	line-height:20px;
+	background: #4daf62;
+	border-radius:999px;
+	text-align:center;
+	color: #fff;
+}
+
+.add-tag:hover {
+	background:#66c37a;
 	cursor: pointer;
 }

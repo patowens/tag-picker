@@ -23,23 +23,28 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		tag : '.tag',
 		suggestions : '.suggestions',
 		suggestion : '.suggestion',
+		extras : '.extras',
+		count: '.count',
+		limit: '.limit'
 	},
 
 	events: {
 		'keyup .input' : 'keyupOnInput',
 		'keydown .input' : 'keydownOnInput',
 		'click .remove' : 'removeTag',
-		'click .suggestion' : 'addSuggestion'
+		'click .suggestion' : 'addSuggestion',
+		'click .add-tag' : 'addTag'
 	},
 
 	initialize: function(options) {
 		this.options = options;
 		this.dictionary = ['javascript', 'nodejs', 'css', 'html', 'php'];
-		this.dictionaryLong = ['jabot', 'jacal', 'jacks', 'jacky', 'jaded', 'jades', 'jager', 'jaggs', 'jaggy', 'jagra', 'jails', 'jakes', 'jalap', 'jalop', 'jambe', 'jambs', 'jammy', 'janes', 'janty', 'japan', 'japed', 'japer', 'japes', 'jarls', 'jatos', 'jauks', 'jaunt'];
+		this.dictionaryLong = ['jabot', 'jacal', 'jacks', 'jacky', 'jaded', 'jades', 'jager', 'jaggs', 'jaggy', 'jagra', 'jails', 'jakes', 'jalap', 'jalop', 'jambe', 'jambs', 'jammy', 'janes', 'janty', 'japan', 'japed', 'japer', 'japes', 'jarls', 'jatos', 'jauks', 'jaunt', 'jbhifi'];
 		this.currentTags = new Array();
 		this.currentSuggestions = new Array();
 		this.currentSuggestion = '';
-		this.progressKeys = [9, 39, 40] // tab, right arrow, down arrow
+		this.progressKeys = [9, 39, 40]; // tab, right arrow, down arrow
+		this.functionalKeys = [8, 13, 46, 16, 37]; // backspace, enter, delete
 	},
 
 	search: function(input) {
@@ -54,6 +59,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	onRender: function() {
 		this.mode();
 		this.ui.tags.prepend('<span class="tag example">eg: ' + this.options.exampleTag + '</span>')
+		this.ui.limit.text(this.options.characterLimit);
 	},
 
 	onShow: function() {
@@ -61,9 +67,15 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	},
 
 	keyupOnInput: function(e) {
+
+		this.updateCounter();
+		var currentValue = this.ui.input.val();
+
+		if (currentValue.length == 0)
+			this.ui.extras.removeClass('reveal');
+
+		// enter key (add tag)
 		if (e.keyCode == 13) {
-			// enter key (add tag)
-			var currentValue = this.ui.input.val();
 
 			// has user hit enter on a suggestion?
 			if (this.currentSuggestion.length != 0) {
@@ -80,13 +92,16 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 				// update suggestions (clear)
 				var searchMatches = this.search(this.ui.input.val());
-				this.updateMatches(searchMatches);
+				this.updateMatches(searchMatches.slice(0, this.options.maxSuggestions || 99));
 			} else if (currentValue.length != 0) {
 				this.addTag(currentValue);
 				
 				// if there was an example tag, hide it.
 				if (this.options.exampleTag)
 					this.$el.find('.example').empty();
+
+				this.ui.extras.removeClass('reveal');
+
 			}
 
 		// there are no suggestions to worry about
@@ -95,7 +110,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		} else {
 			// update suggestions
 			var searchMatches = this.search(this.ui.input.val());
-			this.updateMatches(searchMatches);
+			this.updateMatches(searchMatches.slice(0, this.options.maxSuggestions || 99));
 
 			if (this.options.createTagAsYouType) {
 
@@ -105,14 +120,22 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 					if (this.currentTags.length == 0) {
 						if (this.options.exampleTag)
 							this.$el.find('.example').text('eg: ' + this.options.exampleTag);
+					} else {
+						this.ui.tags.find('.example').text(this.ui.input.val());
 					}
 				}
 			}
+
+			if (this.ui.input.val())
+				this.ui.extras.addClass('reveal');
 
 		}
 	},
 
 	keydownOnInput: function(e) {
+
+		this.updateCounter();
+
 		if (_.contains(this.progressKeys, e.keyCode)) {
 			// tab key (cycle through suggestions)
 			e.preventDefault();
@@ -127,6 +150,15 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 					this.ui.suggestions.children('.focus').removeClass('focus');
 					currentFocus.next().addClass('focus');
 					this.currentSuggestion = currentFocus.next().text();
+				}
+			}
+		} else if (_.contains(this.functionalKeys, e.keyCode)) {
+			return true;
+		} else {
+			if (this.options.characterLimit) {
+				if (this.ui.input.val().length >= this.options.characterLimit) {
+					this.updateCounter();
+					return false;
 				}
 			}
 		}
@@ -150,13 +182,31 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		this.addTag($(e.currentTarget).text());
 		this.ui.input.val('');
 		this.ui.suggestions.empty();
+
+		// if there was an example tag, hide it.
+		if (this.options.exampleTag)
+		this.$el.find('.example').empty();
+
+		this.ui.extras.removeClass('reveal');
 	},
 
 	addTag: function(value) {
+
+		if(typeof value != 'string') {
+			value = this.ui.input.val();
+		}
+
 		var tagHTML = '<span class="tag">' + value + '</span>';
 
 		if (this.options.preventDuplicates) {
-			if (_.contains(this.getTags(), value.toLowerCase())) {
+			var duplicatePosition = this.getTags().indexOf(value.toLowerCase());
+			if (duplicatePosition != -1) {
+				console.log(duplicatePosition);
+				console.log(this.$el.find('.tag:nth-child(1)'));
+				this.$el.find('.tag:nth-child(' + (duplicatePosition + 1) + ')').addClass('tagErrorPulse');
+				window.setTimeout(function() {
+					this.$el.find('.tag:nth-child(' + (duplicatePosition + 1) + ')').removeClass('tagErrorPulse');
+				}.bind(this),500)
 			} else {
 				$(tagHTML).insertBefore('.example');
 				this.currentTags.push(value);
@@ -170,7 +220,14 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 			this.mode();
 		}
 
+		this.updateCounter();
 		this.ui.input.focus();
+		this.ui.extras.removeClass('reveal');
+
+		// if there was an example tag, hide it.
+		if (this.options.exampleTag)
+		this.$el.find('.example').empty();
+
 	},
 
 	removeTag: function(e) {
@@ -201,13 +258,28 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 				that.ui.suggestions.append('<span class="suggestion">' + value + '</span>');
 			});
 		}
+	},
+
+	updateCounter: function() {
+		var currentLength = this.ui.input.val().length;
+		this.ui.count.text(this.ui.input.val().length);
+		if (currentLength == this.options.characterLimit) {
+			this.$el.find('.character-limit').addClass('errorPulse');
+			window.setTimeout(function() {
+				this.$el.find('.character-limit').removeClass('errorPulse');
+			}.bind(this),500);
+		} else {
+			this.$el.find('.character-limit').removeClass('errorPulse');
+		}
+
 	}
 
 });
 
 app.regionMain.show(new Tagity({ 
 	preventDuplicates: true, 
-	characterLimit: 30,
+	characterLimit: 20,
 	createTagAsYouType: true,
-	exampleTag: 'Microsoft Access'
+	exampleTag: 'Microsoft Access',
+	maxSuggestions: 5
 }));
