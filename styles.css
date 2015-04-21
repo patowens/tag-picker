@@ -17,6 +17,10 @@ body {
 	font-size:13px;
 }
 
+.input.showing-extras {
+	padding-right:90px;
+}
+
 .tags {
 	overflow:hidden;
 	margin:8px 0px;
@@ -52,7 +56,7 @@ body {
 
 .tags .tag .remove { 
   font-weight: bold;
-  font-size: 11px;
+  font-size: 10px;
   color: rgba(255,255,255, 0.9);
   -webkit-transition: all .35s;
   transitions: all .35s;
@@ -123,7 +127,7 @@ body {
 .extras {
 	position:absolute;
 	right:-20px;
-	top:8px;
+	top:7px;
 	-webkit-transition: right 0.3s;
   transition: right 0.3s;
 }

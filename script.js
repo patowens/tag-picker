@@ -71,8 +71,10 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		this.updateCounter();
 		var currentValue = this.ui.input.val();
 
-		if (currentValue.length == 0)
+		if (currentValue.length == 0) {
 			this.ui.extras.removeClass('reveal');
+			this.ui.input.removeClass('showing-extras');
+		}
 
 		// enter key (add tag)
 		if (e.keyCode == 13) {
@@ -101,6 +103,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 					this.$el.find('.example').empty();
 
 				this.ui.extras.removeClass('reveal');
+				this.ui.input.removeClass('showing-extras');
 
 			}
 
@@ -126,8 +129,10 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 				}
 			}
 
-			if (this.ui.input.val())
+			if (this.ui.input.val()) {
 				this.ui.extras.addClass('reveal');
+				this.ui.input.addClass('showing-extras');
+			}
 
 		}
 	},
@@ -188,6 +193,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		this.$el.find('.example').empty();
 
 		this.ui.extras.removeClass('reveal');
+		this.ui.input.removeClass('showing-extras');
 	},
 
 	addTag: function(value) {
@@ -221,6 +227,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		this.updateCounter();
 		this.ui.input.focus();
 		this.ui.extras.removeClass('reveal');
+		this.ui.input.removeClass('showing-extras');
 
 		// if there was an example tag, hide it.
 		if (this.options.exampleTag)
@@ -279,7 +286,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 app.regionMain.show(new Tagity({ 
 	preventDuplicates: true, 
-	characterLimit: 20,
+	characterLimit: 100,
 	createTagAsYouType: true,
 	exampleTag: 'Spreadsheets',
 	maxSuggestions: 5
