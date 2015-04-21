@@ -39,6 +39,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		this.currentTags = new Array();
 		this.currentSuggestions = new Array();
 		this.currentSuggestion = '';
+		this.progressKeys = [9, 39, 40] // tab, right arrow, down arrow
 	},
 
 	search: function(input) {
@@ -52,6 +53,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 	onRender: function() {
 		this.mode();
+		this.ui.tags.prepend('<span class="tag example">eg: ' + this.options.exampleTag + '</span>')
 	},
 
 	onShow: function() {
@@ -67,7 +69,10 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 			if (this.currentSuggestion.length != 0) {
 				
 				// add tag
-				this.addTag(this.currentSuggestion);				
+				this.addTag(this.currentSuggestion);
+				// if there was an example tag, hide it.
+				if (this.options.exampleTag)
+					this.$el.find('.example').empty();
 
 				// clear input
 				this.ui.input.val('');
@@ -78,19 +83,37 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 				this.updateMatches(searchMatches);
 			} else if (currentValue.length != 0) {
 				this.addTag(currentValue);
+				
+				// if there was an example tag, hide it.
+				if (this.options.exampleTag)
+					this.$el.find('.example').empty();
 			}
 
-		} else if (e.keyCode == 9) {
+		// there are no suggestions to worry about
+		} else if (_.contains(this.progressKeys, e.keyCode)) {
 			e.preventDefault();
 		} else {
 			// update suggestions
 			var searchMatches = this.search(this.ui.input.val());
 			this.updateMatches(searchMatches);
+
+			if (this.options.createTagAsYouType) {
+
+				if (this.ui.input.val()) {
+					this.ui.tags.find('.example').text(this.ui.input.val());
+				} else {
+					if (this.currentTags.length == 0) {
+						if (this.options.exampleTag)
+							this.$el.find('.example').text('eg: ' + this.options.exampleTag);
+					}
+				}
+			}
+
 		}
 	},
 
 	keydownOnInput: function(e) {
-		if (e.keyCode == 9) {
+		if (_.contains(this.progressKeys, e.keyCode)) {
 			// tab key (cycle through suggestions)
 			e.preventDefault();
 
@@ -130,17 +153,18 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	},
 
 	addTag: function(value) {
+		var tagHTML = '<span class="tag">' + value + '</span>';
 
 		if (this.options.preventDuplicates) {
 			if (_.contains(this.getTags(), value.toLowerCase())) {
 			} else {
-					this.ui.tags.append('<span class="tag">' + value + '</span>');
-					this.currentTags.push(value);
-					this.ui.input.val('');
-					this.mode();
+				$(tagHTML).insertBefore('.example');
+				this.currentTags.push(value);
+				this.ui.input.val('');
+				this.mode();
 			}
 		} else {
-			this.ui.tags.append('<span class="tag">' + value + '</span>');
+			$(tagHTML).insertBefore('.example');
 			this.currentTags.push(value);
 			this.ui.input.val('');
 			this.mode();
@@ -183,5 +207,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 app.regionMain.show(new Tagity({ 
 	preventDuplicates: true, 
-	characterLimit: 30
+	characterLimit: 30,
+	createTagAsYouType: true,
+	exampleTag: 'Microsoft Access'
 }));

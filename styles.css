@@ -34,6 +34,15 @@ body {
   user-select: none;
 }
 
+.tags .tag.example {
+	color:#888888;
+}
+
+.tags .tag.example:empty {
+	padding:0px;
+	margin:0px;
+}
+
 .tags .tag .remove { 
     font-weight: bold;
     font-size:12px; 
