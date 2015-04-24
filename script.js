@@ -48,6 +48,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	},
 
 	search: function(input) {
+		var that = this;
 		var reg = new RegExp(input.split('').join('\\w*').replace(/\W/, ""), 'i');
 		if (!this.dictionary) {
 			this.ui.suggestions.addClass('loading');
@@ -55,11 +56,24 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 				this.ui.suggestions.addClass('has-items');
 		} else {
 			this.ui.suggestions.removeClass('loading');
-		  return this.dictionary.filter(function(result) {
-		    if (result.match(reg)) {
-		      return result;
-		    }
-		  });
+
+			if (this.options.valueField) {
+				
+				return this.dictionary.filter(function(tagObject) {
+					if (tagObject[that.options.valueField].match(reg)) {
+						return tagObject;
+					}
+				});
+			
+			} else {
+			
+			  return this.dictionary.filter(function(result) {
+			    if (result.match(reg)) {
+			      return result;
+			    }
+			  });
+
+			}
 		}
 	},
 
@@ -78,10 +92,11 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		    type:'GET',
 		    dataType:'jsonp',
 		    fake: true,
-		    url:'http://api.etaskr.com/tags/categoryA',
+		    url:this.options.url,
 		    success:function(data, textStatus, XMLHttpRequest) {
+	    		
+		    	that.dictionary = data;
 	    		that.ui.suggestions.empty();
-	    		that.dictionary = data;
 	    		that.ui.suggestions.removeClass('loading');
 	    		that.updateMatches(that.search(that.ui.input.val()));
 		    }
@@ -112,7 +127,13 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 			if (this.currentSuggestion.length != 0) {
 				
 				// add tag
-				this.addTag(this.currentSuggestion);
+
+				if (this.options.valueField) {
+					this.addTag(this.currentSuggestionObject);
+				} else {
+					this.addTag(this.currentSuggestion);
+				}
+				
 				// if there was an example tag, hide it.
 				if (this.options.exampleTag)
 					this.$el.find('.example').empty();
@@ -125,7 +146,18 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 				var searchMatches = this.search(this.ui.input.val());
 				this.updateMatches(searchMatches.slice(0, this.options.maxSuggestions || 99));
 			} else if (currentValue.length != 0) {
-				this.addTag(currentValue);
+
+				// is what the user typed an exact match to a suggestion?
+				if (this.options.valueField) {
+					var exactMatch = _.findWhere(this.dictionary, { name: currentValue }) || _.findWhere(this.dictionary, { name: currentValue.toLowerCase() });
+					if (exactMatch) {
+						this.addTag(exactMatch);						
+					} else {
+						this.addTag(currentValue);	
+					}
+				} else {
+					this.addTag(currentValue);
+				}
 				
 				// if there was an example tag, hide it.
 				if (this.options.exampleTag)
@@ -187,16 +219,25 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 				if (this.ui.suggestions.children('.focus').length == 0) {
 					this.ui.suggestions.children(':first-child').addClass('focus');
 					this.currentSuggestion = this.ui.suggestions.children(':first-child').text();
+
+					if (this.options.valueField)
+						this.currentSuggestionObject = _.findWhere(this.dictionary, { id : this.ui.suggestions.children(':first-child').attr('data-id') });
+
 				} else {
 					var currentFocus = this.ui.suggestions.find('.focus');
 					this.ui.suggestions.children('.focus').removeClass('focus');
 					currentFocus.next().addClass('focus');
 					this.currentSuggestion = currentFocus.next().text();
+
+					if (this.options.valueField)
+						this.currentSuggestionObject = _.findWhere(this.dictionary, { id : currentFocus.next().attr('data-id') });
+
 				}
 			}
 		} else if (_.contains(this.functionalKeys, e.keyCode)) {
 			return true;
 		} else {
+
 			if (this.options.characterLimit) {
 				if (this.ui.input.val().length >= this.options.characterLimit) {
 					this.updateCounter();
@@ -221,7 +262,15 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	},
 
 	addSuggestion: function(e) {
-		this.addTag($(e.currentTarget).text());
+
+		if (this.options.valueField) {
+			// working with objects
+			this.addTag((_.findWhere(this.dictionary, { id : $(e.currentTarget).attr('data-id') })));
+		} else {
+			// working with strings
+			this.addTag($(e.currentTarget).text());
+		}
+
 		this.ui.input.val('');
 		this.ui.suggestions.empty();
 		this.ui.suggestions.removeClass('has-items');
@@ -236,13 +285,27 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 	addTag: function(value) {
 
+		var tagHTML = ''; // we build that tag HTML here
+
 		if(typeof value != 'string') {
-			value = this.ui.input.val();
+
+			var tagObject = value;
+
+			// Add meta fields to the tag if present.
+			if (this.options.metaFields) {
+				var allMetaFields = '';
+				$.each(this.options.metaFields, function(index, meta) {
+					allMetaFields += 'data-' + meta + '="' + tagObject[meta] + '" ';
+				});
+			}
+			tagHTML = '<span class="tag" ' + allMetaFields + ' data-id="' + tagObject.id + '">' + tagObject[this.options.valueField] + '</span>';
+			value = tagObject[this.options.valueField];
+		} else {
+			tagHTML = '<span class="tag">' + value + '</span>';
 		}
 
-		var tagHTML = '<span class="tag">' + value + '</span>';
-
 		if (this.options.preventDuplicates) {
+
 			var duplicatePosition = this.getTags().indexOf(value.toLowerCase());
 			if (duplicatePosition != -1) {
 				this.$el.find('.tag:nth-child(' + (duplicatePosition + 1) + ')').addClass('tagErrorPulse');
@@ -282,16 +345,45 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		$(e.currentTarget).parent().remove();
 	},
 
-	getTags: function() {
+	getTags: function(options) {
+
+		var that = this;
 		var tags = [];
-		if (this.$el.find('.tag').length) { 
-			$.each(this.$el.find('.tag'), function(index, value) {
-				var tag = $(this).text().toLowerCase();
-				tags.push(tag.substring(0, tag.length));
-			});
-			return tags;
+
+		if (options && options.returnObjects) {
+
+			if (this.$el.find('.tag').length) {
+				$.each(this.$el.find('.tag'), function(index, value) {
+					var tagID = $(this).attr('data-id');
+					if (tagID) {
+						var tagObject = _.findWhere(that.dictionary, { id: tagID });
+						tags.push(tagObject);	
+					} else {
+						var tagName = $(this).text().toLowerCase();
+						tagName = tagName.substring(0, tagName.length);
+						var tag = { name: tagName };
+						tags.push(tag);
+					}
+				});
+				return _.without(tags, _.findWhere(tags, { name: "" }));
+			} else {
+				return false;
+			}
+
+		} else {
+			
+			if (this.$el.find('.tag').length) { 
+				$.each(this.$el.find('.tag'), function(index, value) {
+					var tag = $(this).text().toLowerCase();
+					tags.push(tag.substring(0, tag.length));
+				});
+				return tags;
+			} else {
+				return false;
+			}
+
 		}
-		return false;	
+
 	},
 
 	updateMatches: function(matches) {
@@ -301,16 +393,49 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		this.ui.suggestions.removeClass('has-items');
 
 		var currentResults = this.getTags();
-		matches = _.map(matches, function(data) { return data.toLowerCase() });
-		var difference = _.difference(matches, currentResults);
-		this.currentSuggestions = difference;
 
-		if (this.ui.input.val().length != 0) {
-			$.each(difference, function(index, value) {
-				that.ui.suggestions.append('<span class="suggestion">' + value + '</span>');
-				that.ui.suggestions.addClass('has-items');
+		if (!this.options.valueField) {
+
+			// Working with strings
+			matches = _.map(matches, function(data) { return data.toLowerCase() });
+			var difference = _.difference(matches, currentResults);
+			this.currentSuggestions = difference;
+
+			if (this.ui.input.val().length != 0) {
+				$.each(difference, function(index, value) {
+					that.ui.suggestions.append('<span class="suggestion">' + value + '</span>');
+					that.ui.suggestions.addClass('has-items');
+				});
+			}
+
+		} else {
+
+			// Working with objects 
+
+			suggestions = _.filter(matches, function(tagObject) {
+				return currentResults.indexOf(tagObject.name) === -1;
 			});
+
+			this.currentSuggestions = matches;
+
+			if (this.ui.input.val().length != 0) {
+				$.each(suggestions, function(index, suggestion) {
+
+					var allMetaFields = '';
+
+					// Add meta fields to the suggestion if present.
+					if (that.options.metaFields) {
+						$.each(that.options.metaFields, function(index, meta) {
+							allMetaFields += 'data-' + meta + '="' + suggestion[meta] + '" ';
+						});
+					}
+					that.ui.suggestions.append('<span class="suggestion" ' + allMetaFields + 'data-id="' + suggestion[that.options.idField] + '">' + suggestion[that.options.valueField] + '</span>');
+					that.ui.suggestions.addClass('has-items');
+				});
+			}
+
 		}
+
 	},
 
 	updateCounter: function() {
@@ -335,5 +460,9 @@ app.regionMain.show(new Tagity({
 	createTagAsYouType: true,
 	exampleTag: 'Spreadsheets',
 	maxSuggestions: 5,
-	url: 'http://api.etaskr.com/tags/categoryA'
+	url: 'http://api.etaskr.com/tags/objects',
+	idField: 'id',
+	valueField: 'name',
+	metaFields: ['category'], // added to tag as data-fieldname="value"
+	prefill: [{ id: 123, name: 'hello'}, { id: 456, name: 'world'}],
 }));
