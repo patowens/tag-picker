@@ -78,7 +78,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	},
 
 	onRender: function() {
-		this.mode();
+		
 		this.ui.tags.prepend('<span class="tag example">eg: ' + this.options.exampleTag + '</span>')
 		this.ui.limit.text(this.options.characterLimit);
 		var that = this;
@@ -104,10 +104,18 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 			
 		}
 
+		this.mode();
+
 	},
 
 	onShow: function() {
+		var that = this;
 		this.ui.input.focus();
+		if (this.options.prefill) {
+			$.each(this.options.prefill, function(index, tagObject) {
+				that.addTag(tagObject);
+			});
+		}
 	},
 
 	keyupOnInput: function(e) {
@@ -249,8 +257,8 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 	mode: function() {
 		var that = this;
-		if (this.mode == 'view') {
-			this.$el.find('.tag').remove();
+		if (this.options.viewMode) {
+			// do something
 		} else {
 			$.each(that.$el.find('.tag'), function(index, value) {
 				if ($(this).find('.remove').length) {
@@ -286,27 +294,34 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	addTag: function(value) {
 
 		var tagHTML = ''; // we build that tag HTML here
+		var tagObject;
 
 		if(typeof value != 'string') {
 
-			var tagObject = value;
+			tagObject = value;
 
 			// Add meta fields to the tag if present.
 			if (this.options.metaFields) {
 				var allMetaFields = '';
 				$.each(this.options.metaFields, function(index, meta) {
-					allMetaFields += 'data-' + meta + '="' + tagObject[meta] + '" ';
+					if (tagObject[meta])
+						allMetaFields += 'data-' + meta + '="' + tagObject[meta] + '" ';
 				});
 			}
 			tagHTML = '<span class="tag" ' + allMetaFields + ' data-id="' + tagObject.id + '">' + tagObject[this.options.valueField] + '</span>';
 			value = tagObject[this.options.valueField];
 		} else {
-			tagHTML = '<span class="tag">' + value + '</span>';
+			
+			tagObject = {
+				name: value
+			};
+
+			tagHTML = '<span class="tag">' + tagObject.name + '</span>';
 		}
 
 		if (this.options.preventDuplicates) {
 
-			var duplicatePosition = this.getTags().indexOf(value.toLowerCase());
+			var duplicatePosition = _.map(this.getTags(), function(tag) { return tag.name }).indexOf(value.toLowerCase());
 			if (duplicatePosition != -1) {
 				this.$el.find('.tag:nth-child(' + (duplicatePosition + 1) + ')').addClass('tagErrorPulse');
 				window.setTimeout(function() {
@@ -314,13 +329,13 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 				}.bind(this),500)
 			} else {
 				$(tagHTML).insertBefore('.example');
-				this.currentTags.push(value);
+				this.currentTags.push(tagObject);
 				this.ui.input.val('');
 				this.mode();
 			}
 		} else {
 			$(tagHTML).insertBefore('.example');
-			this.currentTags.push(value);
+			this.currentTags.push(tagObject);
 			this.ui.input.val('');
 			this.mode();
 		}
@@ -341,7 +356,9 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	},
 
 	removeTag: function(e) {
-		_.pluck(this.currentTags, $(e.currentTarget).parent().text());
+		this.currentTags = _.reject(this.currentTags, function(tagObject) {
+			return tagObject.name === $(e.currentTarget).parent().text()
+		});
 		$(e.currentTarget).parent().remove();
 	},
 
@@ -350,37 +367,40 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		var that = this;
 		var tags = [];
 
+		return this.currentTags;
+
 		if (options && options.returnObjects) {
 
-			if (this.$el.find('.tag').length) {
-				$.each(this.$el.find('.tag'), function(index, value) {
-					var tagID = $(this).attr('data-id');
-					if (tagID) {
-						var tagObject = _.findWhere(that.dictionary, { id: tagID });
-						tags.push(tagObject);	
-					} else {
-						var tagName = $(this).text().toLowerCase();
-						tagName = tagName.substring(0, tagName.length);
-						var tag = { name: tagName };
-						tags.push(tag);
-					}
-				});
-				return _.without(tags, _.findWhere(tags, { name: "" }));
-			} else {
-				return false;
-			}
+			// if (this.$el.find('.tag').length) {
+			// 	$.each(this.$el.find('.tag'), function(index, value) {
+			// 		var tagID = $(this).attr('data-id');
+			// 		if (tagID) {
+			// 			var tagObject = _.findWhere(that.dictionary, { id: tagID });
+			// 			tags.push(tagObject);	
+			// 		} else {
+			// 			var tagName = $(this).text().toLowerCase();
+			// 			tagName = tagName.substring(0, tagName.length);
+			// 			var tag = { name: tagName };
+			// 			tags.push(tag);
+			// 		}
+			// 	});
+			// 	console.log(tags);
+			// 	return _.without(tags, _.findWhere(tags, { name: "" }));
+			// } else {
+			// 	return false;
+			// }
 
 		} else {
 			
-			if (this.$el.find('.tag').length) { 
-				$.each(this.$el.find('.tag'), function(index, value) {
-					var tag = $(this).text().toLowerCase();
-					tags.push(tag.substring(0, tag.length));
-				});
-				return tags;
-			} else {
-				return false;
-			}
+			// if (this.$el.find('.tag').length) { 
+			// 	$.each(this.$el.find('.tag'), function(index, value) {
+			// 		var tag = $(this).text().toLowerCase();
+			// 		tags.push(tag.substring(0, tag.length));
+			// 	});
+			// 	return tags;
+			// } else {
+			// 	return false;
+			// }
 
 		}
 
@@ -392,7 +412,9 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		this.ui.suggestions.empty();
 		this.ui.suggestions.removeClass('has-items');
 
-		var currentResults = this.getTags();
+		var currentResults = _.map(this.getTags(), function(tag) {
+			return tag.name;
+		});
 
 		if (!this.options.valueField) {
 
@@ -426,7 +448,8 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 					// Add meta fields to the suggestion if present.
 					if (that.options.metaFields) {
 						$.each(that.options.metaFields, function(index, meta) {
-							allMetaFields += 'data-' + meta + '="' + suggestion[meta] + '" ';
+							if (suggestion[meta])
+								allMetaFields += 'data-' + meta + '="' + suggestion[meta] + '" ';
 						});
 					}
 					that.ui.suggestions.append('<span class="suggestion" ' + allMetaFields + 'data-id="' + suggestion[that.options.idField] + '">' + suggestion[that.options.valueField] + '</span>');
@@ -456,13 +479,14 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 app.regionMain.show(new Tagity({ 
 	preventDuplicates: true, 
-	characterLimit: 100,
+	characterLimit: 30,
 	createTagAsYouType: true,
 	exampleTag: 'Spreadsheets',
 	maxSuggestions: 5,
 	url: 'http://api.etaskr.com/tags/objects',
 	idField: 'id',
 	valueField: 'name',
-	metaFields: ['category'], // added to tag as data-fieldname="value"
-	prefill: [{ id: 123, name: 'hello'}, { id: 456, name: 'world'}],
+	metaFields: ['category', 'foo'], // added to tag as data-fieldname="value",
+	viewMode: false,
+	prefill: [{ id: '123', name: 'hello', category: 'C', foo: "bar" }, { id: '456', name: 'world', category: 'D' }],
 }));
