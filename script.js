@@ -78,8 +78,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	},
 
 	onRender: function() {
-		
-		this.ui.tags.prepend('<span class="tag example">eg: ' + this.options.exampleTag + '</span>')
+				
 		this.ui.limit.text(this.options.characterLimit);
 		var that = this;
 
@@ -116,6 +115,10 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 				that.addTag(tagObject);
 			});
 		}
+
+		if (this.options.createTagAsYouType) {
+			this.ui.tags.append('<span class="builder"></span>')
+		}
 	},
 
 	keyupOnInput: function(e) {
@@ -143,7 +146,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 				}
 				
 				// if there was an example tag, hide it.
-				if (this.options.exampleTag)
+				if (this.options.examples)
 					this.$el.find('.example').empty();
 
 				// clear input
@@ -168,7 +171,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 				}
 				
 				// if there was an example tag, hide it.
-				if (this.options.exampleTag)
+				if (this.options.examples)
 					this.$el.find('.example').empty();
 
 				this.ui.extras.removeClass('reveal');
@@ -193,12 +196,22 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 				if (this.options.createTagAsYouType) {
 					if (this.ui.input.val().length) {
-						this.ui.tags.find('.example').text(' ' + this.ui.input.val() + '..');
+						this.ui.tags.find('.builder').text(' ' + this.ui.input.val() + '..');
 					} else {
 						if (this.currentTags.length == 0) {
-							if (this.options.exampleTag)
-								this.$el.find('.example').text('eg: ' + this.options.exampleTag);
+							if (this.options.examples) {
+								this.ui.tags.find('.builder').empty();
+
+								var examples = '';
+								for (var i = 0; i < this.options.examples.length; i++) {
+									examples += '<span class="example">eg: ' + this.options.examples[i] + '</span>';
+								}
+								this.$el.find('.example').remove();
+								this.ui.tags.prepend(examples);
+
+							}
 						} else {
+							this.ui.tags.find('.builder').empty();
 							this.ui.tags.find('.example').text(this.ui.input.val());
 						}
 					}
@@ -243,8 +256,17 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 				}
 			}
 		} else if (_.contains(this.functionalKeys, e.keyCode)) {
+
+			if (this.options.createTagAsYouType) {
+				if (this.ui.input.val().length) {
+					this.ui.tags.find('.builder').text(' ' + this.ui.input.val() + '..');
+				}
+			}
+
 			return true;
 		} else {
+
+			this.$el.find('.example').empty();
 
 			if (this.options.characterLimit) {
 				if (this.ui.input.val().length >= this.options.characterLimit) {
@@ -252,6 +274,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 					return false;
 				}
 			}
+
 		}
 	},
 
@@ -284,7 +307,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		this.ui.suggestions.removeClass('has-items');
 
 		// if there was an example tag, hide it.
-		if (this.options.exampleTag)
+		if (this.options.examples)
 		this.$el.find('.example').empty();
 
 		this.ui.extras.removeClass('reveal');
@@ -321,20 +344,24 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 		if (this.options.preventDuplicates) {
 
-			var duplicatePosition = _.map(this.getTags(), function(tag) { return tag.name }).indexOf(value.toLowerCase());
+			var duplicatePosition = _.map(this.getTags(), function(tag) { return tag.name.toLowerCase() }).indexOf(value.toLowerCase());
+			
 			if (duplicatePosition != -1) {
-				this.$el.find('.tag:nth-child(' + (duplicatePosition + 1) + ')').addClass('tagErrorPulse');
+
+				var tagOffset = 1;
+
+				this.$el.find('.tag:nth-child(' + (duplicatePosition + tagOffset) + ')').addClass('tagErrorPulse');
 				window.setTimeout(function() {
-					this.$el.find('.tag:nth-child(' + (duplicatePosition + 1) + ')').removeClass('tagErrorPulse');
+					this.$el.find('.tag:nth-child(' + (duplicatePosition + tagOffset) + ')').removeClass('tagErrorPulse');
 				}.bind(this),500)
 			} else {
-				$(tagHTML).insertBefore('.example');
+				$(tagHTML).insertBefore('.example:first');
 				this.currentTags.push(tagObject);
 				this.ui.input.val('');
 				this.mode();
 			}
 		} else {
-			$(tagHTML).insertBefore('.example');
+			$(tagHTML).insertBefore('.example:first');
 			this.currentTags.push(tagObject);
 			this.ui.input.val('');
 			this.mode();
@@ -350,8 +377,11 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		this.ui.suggestions.removeClass('has-items');
 
 		// if there was an example tag, hide it.
-		if (this.options.exampleTag)
-		this.$el.find('.example').empty();
+		if (this.options.examples)
+			this.$el.find('.example').empty();
+
+		if (this.options.createTagAsYouType)
+			this.$el.find('.builder').empty();
 
 	},
 
@@ -481,12 +511,12 @@ app.regionMain.show(new Tagity({
 	preventDuplicates: true, 
 	characterLimit: 30,
 	createTagAsYouType: true,
-	exampleTag: 'Spreadsheets',
+	examples: ['Spreadsheets', 'Databases'],
 	maxSuggestions: 5,
 	url: 'http://api.etaskr.com/tags/objects',
 	idField: 'id',
 	valueField: 'name',
 	metaFields: ['category', 'foo'], // added to tag as data-fieldname="value",
 	viewMode: false,
-	prefill: [{ id: '123', name: 'hello', category: 'C', foo: "bar" }, { id: '456', name: 'world', category: 'D' }],
+	// prefill: [{ id: '123', name: 'hello', category: 'C', foo: "bar" }, { id: '456', name: 'world', category: 'D' }],
 }));

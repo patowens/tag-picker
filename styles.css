@@ -26,7 +26,7 @@ body {
 	margin:8px 0px;
 }
 
-.tags .tag {
+.tags .tag, .tags .builder, .tags .example  {
 	padding:4px 10px 4px 9px;
 	font-size:13px;
 	line-height:17px;
@@ -48,12 +48,12 @@ body {
 	text-transform: capitalize;
 }
 
-.tags .tag.example {
+.tags .example, .tags .builder {
 	background:#CCCCCC;
 	color:#888888;
 }
 
-.tags .tag.example:empty {
+.tags .example:empty, .tags .builder:empty {
 	padding:0px;
 	margin:0px;
 }
