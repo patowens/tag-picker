@@ -119,6 +119,17 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 		if (this.options.createTagAsYouType) {
 			this.ui.tags.append('<span class="builder"></span>')
 		}
+
+		if (this.options.examples) {
+		var examples = '';
+			for (var i = 0; i < this.options.examples.length; i++) {
+				var examplePrefix = '';
+				if (i ==0) { examplePrefix = 'eg: '}
+				examples += '<span class="example">' + examplePrefix + this.options.examples[i] + '</span>';
+			}
+			this.$el.find('.example').remove();
+			this.ui.tags.prepend(examples);
+		}
 	},
 
 	keyupOnInput: function(e) {
