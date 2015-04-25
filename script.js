@@ -204,7 +204,9 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 								var examples = '';
 								for (var i = 0; i < this.options.examples.length; i++) {
-									examples += '<span class="example">eg: ' + this.options.examples[i] + '</span>';
+									var examplePrefix = '';
+									if (i ==0) { examplePrefix = 'eg: '}
+									examples += '<span class="example">' + examplePrefix + this.options.examples[i] + '</span>';
 								}
 								this.$el.find('.example').remove();
 								this.ui.tags.prepend(examples);
