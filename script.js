@@ -334,18 +334,28 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 
 		if(typeof value != 'string') {
 
-			tagObject = value;
+			if (value.hasOwnProperty('originalEvent')) {
+				tagObject = {
+					name: this.ui.input.val()
+				};
+				value = tagObject[this.options.valueField];
+				tagHTML = '<span class="tag">' + tagObject.name + '</span>';
+			} else {
 
-			// Add meta fields to the tag if present.
-			if (this.options.metaFields) {
-				var allMetaFields = '';
-				$.each(this.options.metaFields, function(index, meta) {
-					if (tagObject[meta])
-						allMetaFields += 'data-' + meta + '="' + tagObject[meta] + '" ';
-				});
+				tagObject = value;
+
+				// Add meta fields to the tag if present.
+				if (this.options.metaFields) {
+					var allMetaFields = '';
+					$.each(this.options.metaFields, function(index, meta) {
+						if (tagObject[meta])
+							allMetaFields += 'data-' + meta + '="' + tagObject[meta] + '" ';
+					});
+				}
+				tagHTML = '<span class="tag" ' + allMetaFields + ' data-id="' + tagObject.id + '">' + tagObject[this.options.valueField] + '</span>';
+				value = tagObject[this.options.valueField];
 			}
-			tagHTML = '<span class="tag" ' + allMetaFields + ' data-id="' + tagObject.id + '">' + tagObject[this.options.valueField] + '</span>';
-			value = tagObject[this.options.valueField];
+
 		} else {
 			
 			tagObject = {
