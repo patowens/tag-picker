@@ -8,6 +8,11 @@ body {
 	overflow:hidden;
 }
 
+.feature-tagity .wrapper {
+	position:relative;
+	overflow:hidden;
+}
+
 .input {
 	display:block;
 	width:100%;
@@ -257,4 +262,20 @@ body {
 .add-tag:hover {
 	background:#66c37a;
 	cursor: pointer;
+}
+
+.tagity-title {
+	display:block;
+	margin-bottom:10px;
+	border-bottom:1px solid #CCCCCC;
+	color:#888888;
+	padding-bottom:6px;
+}
+
+.tagity-title i {
+	margin-right:6px;
+}
+
+.tagity-title:empty {
+	display:none;
 }

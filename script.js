@@ -19,6 +19,7 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	template: '#tagity-template',
 
 	ui: { 
+		title: ".tagity-title",
 		input : '.input',
 		tags : '.tags',
 		tag : '.tag',
@@ -110,12 +111,10 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	onShow: function() {
 		var that = this;
 		this.ui.input.focus();
-		if (this.options.prefill) {
-			$.each(this.options.prefill, function(index, tagObject) {
-				that.addTag(tagObject);
-			});
-		}
 
+		if (this.options.title) 
+			this.ui.title.html(this.options.title)
+		
 		if (this.options.createTagAsYouType) {
 			this.ui.tags.append('<span class="builder"></span>')
 		}
@@ -130,6 +129,13 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 			this.$el.find('.example').remove();
 			this.ui.tags.prepend(examples);
 		}
+
+		if (this.options.prefill) {
+			$.each(this.options.prefill, function(index, tagObject) {
+				that.addTag(tagObject);
+			});
+		}
+
 	},
 
 	keyupOnInput: function(e) {
@@ -294,7 +300,8 @@ var Tagity = Backbone.Marionette.ItemView.extend({
 	mode: function() {
 		var that = this;
 		if (this.options.viewMode) {
-			// do something
+			this.ui.input.hide();
+			this.ui.extras.hide();
 		} else {
 			$.each(that.$el.find('.tag'), function(index, value) {
 				if ($(this).find('.remove').length) {
@@ -541,5 +548,6 @@ app.regionMain.show(new Tagity({
 	valueField: 'name',
 	metaFields: ['category', 'foo'], // added to tag as data-fieldname="value",
 	viewMode: false,
-	// prefill: [{ id: '123', name: 'hello', category: 'C', foo: "bar" }, { id: '456', name: 'world', category: 'D' }],
+	title: "<i class='fa fa-tags'></i>Keywords",
+	prefill: [{ id: '123', name: 'hello', category: 'C', foo: "bar" }, { id: '456', name: 'world', category: 'D' }],
 }));
